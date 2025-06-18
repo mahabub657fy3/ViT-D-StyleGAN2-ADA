@@ -11,10 +11,12 @@ A PyTorch-based implementation of the **ViT-StyleGAN2-ADA** framework, designed 
 - 🌀 **Patch Dropout & Shuffle**: New transformer-friendly augmentations integrated into ADA.
 - 🔁 **Adaptive Augmentation**: DiffAug + Balanced Consistency Regularization (bCR) dynamically tuned using discriminator feedback.
 - 🧪 **Transformer-Specific Losses**: Token-level gradient penalties and class-token Path Length Regularization (PLR).
-- 🎯 **Outperforms SOTA GANs** on low-shot datasets like FFHQ (2k, 5k, 10k), AFHQ, and CIFAR-10.
 
 ## 🖼️ Sample Results
 Generated Samples for FFHQ (256×256) AFHQ-CAT, DOG (512×512) with Proposed ViT-D-StyleGAN2-ADA, and Other Methods:
 
 ![image](https://github.com/user-attachments/assets/5192b42c-1c07-420d-a80f-a4d4a4098cc1)
 
+📩 Contact
+📧 Md Mahabubur Rahman: rmahabubur233@gmail.com
+🔗 Project Advisor: Hui Zeng

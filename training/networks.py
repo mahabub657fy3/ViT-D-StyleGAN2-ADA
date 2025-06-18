@@ -515,31 +515,8 @@ def _no_grad_trunc_normal_(tensor, mean, std, a, b):
 
 def trunc_normal_(tensor, mean=0., std=1., a=-2., b=2.):
   
-    r"""Fills the input Tensor with values drawn from a truncated
-    normal distribution. The values are effectively drawn from the
-    normal distribution :math:`\mathcal{N}(\text{mean}, \text{std}^2)`
-    with values outside :math:`[a, b]` redrawn until they are within
-    the bounds. The method used for generating the random values works
-    best when :math:`a \leq \text{mean} \leq b`.
-    Args:
-        tensor: an n-dimensional `torch.Tensor`
-        mean: the mean of the normal distribution
-        std: the standard deviation of the normal distribution
-        a: the minimum cutoff value
-        b: the maximum cutoff value
-    Examples:
-        >>> w = torch.empty(3, 5)
-        >>> nn.init.trunc_normal_(w)
-    """
     return _no_grad_trunc_normal_(tensor, mean, std, a, b)
 def drop_path(x, drop_prob: float = 0., training: bool = False):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
-    This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
-    the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
-    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for
-    changing the layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use
-    'survival rate' as the argument.
-    """
     if drop_prob == 0. or not training:
         return x
     keep_prob = 1 - drop_prob
@@ -580,11 +557,6 @@ class PixelNorm(nn.Module):
         return input * torch.rsqrt(torch.mean(input ** 2, dim=2, keepdim=True) + 1e-8)
 
 def gelu(x):
-    """ Original Implementation of the gelu activation function in Google Bert repo when initialy created.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
-    """
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 def leakyrelu(x):
@@ -635,7 +607,6 @@ class Attention(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
-        # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
         self.scale = qk_scale or head_dim ** -0.5
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
@@ -690,11 +661,9 @@ class CustomNorm(nn.Module):
     def forward(self, x):
         if self.norm is None:
             return x
-        # If it's BatchNorm1d or InstanceNorm1d, do the .permute(...).
         if isinstance(self.norm, (nn.BatchNorm1d, nn.InstanceNorm1d)):
             x = self.norm(x.permute(0,2,1)).permute(0,2,1)
             return x
-        # Otherwise, just call self.norm(x):
         return self.norm(x)       
 
 class Block(nn.Module):
@@ -705,7 +674,6 @@ class Block(nn.Module):
         self.norm1 = CustomNorm(norm_layer, dim)
         self.attn = Attention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, window_size=window_size)
-        # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = CustomNorm(norm_layer, dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
@@ -763,7 +731,6 @@ class DisBlock(nn.Module):
         self.norm1 = CustomNorm(norm_layer, dim)
         self.attn = Attention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
-        # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = CustomNorm(norm_layer, dim)
         mlp_hidden_dim = int(dim * mlp_ratio)

@@ -583,7 +583,7 @@ def setup_training_loop_kwargs(
     args.G_kwargs.synthesis_kwargs.conv_clamp  = 256 
     args.G_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=spec.lrate_G,  betas=[0,0.99], eps=1e-8)
     args.D_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.AdamW', lr=spec.lrate_D, betas=[0,0.99], weight_decay=0.01,eps=1e-8)
-    args.loss_kwargs = dnnlib.EasyDict(class_name='training.loss.StyleGAN2Loss', r1_gamma=spec.gamma,phi=10)
+    args.loss_kwargs = dnnlib.EasyDict(class_name='training.transformer-loss.Loss', r1_gamma=spec.gamma,phi=10)
 
     args.total_kimg = spec.kimg
     args.batch_size = spec.mb

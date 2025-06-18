@@ -17,6 +17,3 @@ Generated Samples for FFHQ (256×256) AFHQ-CAT, DOG (512×512) with Proposed ViT
 
 ![image](https://github.com/user-attachments/assets/5192b42c-1c07-420d-a80f-a4d4a4098cc1)
 
-📩 Contact
-📧 Md Mahabubur Rahman: rmahabubur233@gmail.com
-🔗 Project Advisor: Hui Zeng

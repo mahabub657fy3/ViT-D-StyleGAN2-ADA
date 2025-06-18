@@ -1,8 +1,11 @@
+import math
+import warnings
 ﻿import numpy as np
-import torch
+import torch.nn as nn
 from torch_utils import misc
 from torch_utils import persistence
 from torch_utils.ops import conv2d_resample
+from training.diff_aug import DiffAugment
 from torch_utils.ops import upfirdn2d
 from torch_utils.ops import bias_act
 from torch_utils.ops import fma
@@ -27,27 +30,23 @@ def modulated_conv2d(
 ):
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
-    misc.assert_shape(weight, [out_channels, in_channels, kh, kw]) # [OIkk]
-    misc.assert_shape(x, [batch_size, in_channels, None, None]) # [NIHW]
-    misc.assert_shape(styles, [batch_size, in_channels]) # [NI]
-
-    # Pre-normalize inputs to avoid FP16 overflow.
+    misc.assert_shape(weight, [out_channels, in_channels, kh, kw])
+    misc.assert_shape(x, [batch_size, in_channels, None, None]) 
+    misc.assert_shape(styles, [batch_size, in_channels])
     if x.dtype == torch.float16 and demodulate:
-        weight = weight * (1 / np.sqrt(in_channels * kh * kw) / weight.norm(float('inf'), dim=[1,2,3], keepdim=True)) # max_Ikk
-        styles = styles / styles.norm(float('inf'), dim=1, keepdim=True) # max_I
+        weight = weight * (1 / np.sqrt(in_channels * kh * kw) / weight.norm(float('inf'), dim=[1,2,3], keepdim=True)) 
+        styles = styles / styles.norm(float('inf'), dim=1, keepdim=True) 
 
-    # Calculate per-sample weights and demodulation coefficients.
     w = None
     dcoefs = None
     if demodulate or fused_modconv:
-        w = weight.unsqueeze(0) # [NOIkk]
-        w = w * styles.reshape(batch_size, 1, -1, 1, 1) # [NOIkk]
+        w = weight.unsqueeze(0) 
+        w = w * styles.reshape(batch_size, 1, -1, 1, 1) 
     if demodulate:
-        dcoefs = (w.square().sum(dim=[2,3,4]) + 1e-8).rsqrt() # [NO]
+        dcoefs = (w.square().sum(dim=[2,3,4]) + 1e-8).rsqrt() 
     if demodulate and fused_modconv:
-        w = w * dcoefs.reshape(batch_size, -1, 1, 1, 1) # [NOIkk]
+        w = w * dcoefs.reshape(batch_size, -1, 1, 1, 1) 
 
-    # Execute by scaling the activations before and after the convolution.
     if not fused_modconv:
         x = x * styles.to(x.dtype).reshape(batch_size, -1, 1, 1)
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
@@ -59,8 +58,7 @@ def modulated_conv2d(
             x = x.add_(noise.to(x.dtype))
         return x
 
-    # Execute as one fused op using grouped convolution.
-    with misc.suppress_tracer_warnings(): # this value will be treated as a constant
+    with misc.suppress_tracer_warnings():
         batch_size = int(batch_size)
     misc.assert_shape(x, [batch_size, in_channels, None, None])
     x = x.reshape(1, -1, *x.shape[2:])
@@ -144,7 +142,7 @@ class Conv2dLayer(torch.nn.Module):
     def forward(self, x, gain=1):
         w = self.weight * self.weight_gain
         b = self.bias.to(x.dtype) if self.bias is not None else None
-        flip_weight = (self.up == 1) # slightly faster
+        flip_weight = (self.up == 1)
         x = conv2d_resample.conv2d_resample(x=x, w=w.to(x.dtype), f=self.resample_filter, up=self.up, down=self.down, padding=self.padding, flip_weight=flip_weight)
 
         act_gain = self.act_gain * gain
@@ -194,7 +192,6 @@ class MappingNetwork(torch.nn.Module):
             self.register_buffer('w_avg', torch.zeros([w_dim]))
 
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False):
-        # Embed, normalize, and concat inputs.
         x = None
         with torch.autograd.profiler.record_function('input'):
             if self.z_dim > 0:
@@ -205,22 +202,18 @@ class MappingNetwork(torch.nn.Module):
                 y = normalize_2nd_moment(self.embed(c.to(torch.float32)))
                 x = torch.cat([x, y], dim=1) if x is not None else y
 
-        # Main layers.
         for idx in range(self.num_layers):
             layer = getattr(self, f'fc{idx}')
             x = layer(x)
 
-        # Update moving average of W.
         if self.w_avg_beta is not None and self.training and not skip_w_avg_update:
             with torch.autograd.profiler.record_function('update_w_avg'):
                 self.w_avg.copy_(x.detach().mean(dim=0).lerp(self.w_avg, self.w_avg_beta))
 
-        # Broadcast.
         if self.num_ws is not None:
             with torch.autograd.profiler.record_function('broadcast'):
                 x = x.unsqueeze(1).repeat([1, self.num_ws, 1])
 
-        # Apply truncation.
         if truncation_psi != 1:
             with torch.autograd.profiler.record_function('truncate'):
                 assert self.w_avg_beta is not None
@@ -275,7 +268,7 @@ class SynthesisLayer(torch.nn.Module):
         if self.use_noise and noise_mode == 'const':
             noise = self.noise_const * self.noise_strength
 
-        flip_weight = (self.up == 1) # slightly faster
+        flip_weight = (self.up == 1) 
         x = modulated_conv2d(x=x, weight=self.weight, styles=styles, noise=noise, up=self.up,
             padding=self.padding, resample_filter=self.resample_filter, flip_weight=flip_weight, fused_modconv=fused_modconv)
 
@@ -358,10 +351,9 @@ class SynthesisBlock(torch.nn.Module):
         dtype = torch.float16 if self.use_fp16 and not force_fp32 else torch.float32
         memory_format = torch.channels_last if self.channels_last and not force_fp32 else torch.contiguous_format
         if fused_modconv is None:
-            with misc.suppress_tracer_warnings(): # this value will be treated as a constant
+            with misc.suppress_tracer_warnings(): 
                 fused_modconv = (not self.training) and (dtype == torch.float32 or int(x.shape[0]) == 1)
 
-        # Input.
         if self.in_channels == 0:
             x = self.const.to(dtype=dtype, memory_format=memory_format)
             x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
@@ -369,7 +361,6 @@ class SynthesisBlock(torch.nn.Module):
             misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
             x = x.to(dtype=dtype, memory_format=memory_format)
 
-        # Main layers.
         if self.in_channels == 0:
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
         elif self.architecture == 'resnet':
@@ -381,7 +372,6 @@ class SynthesisBlock(torch.nn.Module):
             x = self.conv0(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
 
-        # ToRGB.
         if img is not None:
             misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
             img = upfirdn2d.upsample2d(img, self.resample_filter)
@@ -470,13 +460,6 @@ class Generator(torch.nn.Module):
         ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
         img = self.synthesis(ws, **synthesis_kwargs)
         return img
-
-import torch
-import torch.nn as nn
-import math
-import numpy as np
-from training.diff_aug import DiffAugment
-import warnings
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     # Cut & paste from PyTorch official master until it's in a few official releases - RW

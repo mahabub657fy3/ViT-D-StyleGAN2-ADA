@@ -8,7 +8,7 @@ A PyTorch-based implementation of the **ViT-StyleGAN2-ADA** framework, designed 
 ![image](https://github.com/user-attachments/assets/cc7955af-d880-4afc-9b60-f4cb9fce7c55)
 
 - 🧩 **ViT Discriminator**: Replaces CNN with a Vision Transformer using multi-scale patch processing and grid self-attention.
-- 🌀 **Patch Dropout & Shuffle**: New transformer-friendly augmentations integrated into ADA.
+- 🌀 **Patch Dropout & Shuffle**: Transformer-friendly augmentations integrated into ADA.
 - 🔁 **Adaptive Augmentation**: DiffAug + Balanced Consistency Regularization (bCR) dynamically tuned using discriminator feedback.
 - 🧪 **Transformer-Specific Losses**: Token-level gradient penalties and class-token Path Length Regularization (PLR).
 

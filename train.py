@@ -17,11 +17,9 @@ import numpy as np
 import torch
 import dnnlib
 from torch_utils import misc
-from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
 from torch_utils.ops import grid_sample_gradfix
 import network_pkl
-from metrics import metric_main
 from metrics import metric_main
 from torch_utils import training_stats
 from torch_utils import custom_ops

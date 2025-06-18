@@ -1,5 +1,3 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
-
 import functools
 import io
 import json
@@ -30,12 +28,11 @@ def file_ext(name: Union[str, Path]) -> str:
 
 def is_image_ext(fname: Union[str, Path]) -> bool:
     ext = file_ext(fname).lower()
-    return f'.{ext}' in PIL.Image.EXTENSION # type: ignore
+    return f'.{ext}' in PIL.Image.EXTENSION 
 
 def open_image_folder(source_dir, *, max_images: Optional[int]):
     input_images = [str(f) for f in sorted(Path(source_dir).rglob('*')) if is_image_ext(f) and os.path.isfile(f)]
 
-    # Load labels.
     labels = {}
     meta_fname = os.path.join(source_dir, 'dataset.json')
     if os.path.isfile(meta_fname):
@@ -62,7 +59,6 @@ def open_image_zip(source, *, max_images: Optional[int]):
     with zipfile.ZipFile(source, mode='r') as z:
         input_images = [str(f) for f in sorted(z.namelist()) if is_image_ext(f)]
 
-        # Load labels.
         labels = {}
         if 'dataset.json' in z.namelist():
             with z.open('dataset.json', 'r') as file:
@@ -78,7 +74,7 @@ def open_image_zip(source, *, max_images: Optional[int]):
         with zipfile.ZipFile(source, mode='r') as z:
             for idx, fname in enumerate(input_images):
                 with z.open(fname, 'r') as file:
-                    img = PIL.Image.open(file) # type: ignore
+                    img = PIL.Image.open(file) 
                     img = np.array(img)
                 yield dict(img=img, label=labels.get(fname))
                 if idx >= max_idx-1:
@@ -100,7 +96,7 @@ def open_lmdb(lmdb_dir: str, *, max_images: Optional[int]):
                         img = cv2.imdecode(np.frombuffer(value, dtype=np.uint8), 1)
                         if img is None:
                             raise IOError('cv2.imdecode failed')
-                        img = img[:, :, ::-1] # BGR => RGB
+                        img = img[:, :, ::-1] 
                     except IOError:
                         img = np.array(PIL.Image.open(io.BytesIO(value)))
                     yield dict(img=img, label=None)
@@ -125,7 +121,7 @@ def open_cifar10(tarball: str, *, max_images: Optional[int]):
 
     images = np.concatenate(images)
     labels = np.concatenate(labels)
-    images = images.transpose([0, 2, 3, 1]) # NCHW -> NHWC
+    images = images.transpose([0, 2, 3, 1])
     assert images.shape == (50000, 32, 32, 3) and images.dtype == np.uint8
     assert labels.shape == (50000,) and labels.dtype in [np.int32, np.int64]
     assert np.min(images) == 0 and np.max(images) == 255
@@ -261,15 +257,6 @@ def open_dest(dest: str) -> Tuple[str, Callable[[str, Union[bytes, str]], None],
                 fout.write(data)
         return dest, folder_write_bytes, lambda: None
 
-@click.command()
-@click.pass_context
-@click.option('--source', help='Directory or archive name for input dataset', required=True, metavar='PATH')
-@click.option('--dest', help='Output directory or archive name for output dataset', required=True, metavar='PATH')
-@click.option('--max-images', help='Output only up to `max-images` images', type=int, default=None)
-@click.option('--resize-filter', help='Filter to use when resizing images for output resolution', type=click.Choice(['box', 'lanczos']), default='lanczos', show_default=True)
-@click.option('--transform', help='Input crop/resize mode', type=click.Choice(['center-crop', 'center-crop-wide']))
-@click.option('--width', help='Output width', type=int)
-@click.option('--height', help='Output height', type=int)
 def convert_dataset(
     ctx: click.Context,
     source: str,
@@ -280,65 +267,7 @@ def convert_dataset(
     width: Optional[int],
     height: Optional[int]
 ):
-    """Convert an image dataset into a dataset archive usable with StyleGAN2 ADA PyTorch.
-
-    The input dataset format is guessed from the --source argument:
-
-    \b
-    --source *_lmdb/                    Load LSUN dataset
-    --source cifar-10-python.tar.gz     Load CIFAR-10 dataset
-    --source train-images-idx3-ubyte.gz Load MNIST dataset
-    --source path/                      Recursively load all images from path/
-    --source dataset.zip                Recursively load all images from dataset.zip
-
-    Specifying the output format and path:
-
-    \b
-    --dest /path/to/dir                 Save output files under /path/to/dir
-    --dest /path/to/dataset.zip         Save output files into /path/to/dataset.zip
-
-    The output dataset format can be either an image folder or an uncompressed zip archive.
-    Zip archives makes it easier to move datasets around file servers and clusters, and may
-    offer better training performance on network file systems.
-
-    Images within the dataset archive will be stored as uncompressed PNG.
-    Uncompresed PNGs can be efficiently decoded in the training loop.
-
-    Class labels are stored in a file called 'dataset.json' that is stored at the
-    dataset root folder.  This file has the following structure:
-
-    \b
-    {
-        "labels": [
-            ["00000/img00000000.png",6],
-            ["00000/img00000001.png",9],
-            ... repeated for every image in the datase
-            ["00049/img00049999.png",1]
-        ]
-    }
-
-    If the 'dataset.json' file cannot be found, the dataset is interpreted as
-    not containing class labels.
-
-    Image scale/crop and resolution requirements:
-
-    Output images must be square-shaped and they must all have the same power-of-two
-    dimensions.
-
-    To scale arbitrary input image size to a specific width and height, use the
-    --width and --height options.  Output resolution will be either the original
-    input resolution (if --width/--height was not specified) or the one specified with
-    --width/height.
-
-    Use the --transform=center-crop or --transform=center-crop-wide options to apply a
-    center crop transform on the input image.  These options should be used with the
-    --width and --height options.  For example:
-
-    \b
-    python dataset_tool.py --source LSUN/raw/cat_lmdb --dest /tmp/lsun_cat \\
-        --transform=center-crop-wide --width 512 --height=384
-    """
-    PIL.Image.init() # type: ignore
+    PIL.Image.init() 
 
     if dest == '':
         ctx.fail('--dest output filename or directory must not be an empty string')
@@ -355,14 +284,10 @@ def convert_dataset(
         idx_str = f'{idx:08d}'
         archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
 
-        # Apply crop and resize.
         img = transform_image(image['img'])
 
-        # Transform may drop images.
         if img is None:
             continue
-        # Error check to require uniform image attributes across
-        # the whole dataset.
         channels = img.shape[2] if img.ndim == 3 else 1
         cur_image_attrs = {
             'width': img.shape[1],
@@ -383,7 +308,6 @@ def convert_dataset(
             err = [f'  dataset {k}/cur image {k}: {dataset_attrs[k]}/{cur_image_attrs[k]}' for k in dataset_attrs.keys()]
             error(f'Image {archive_fname} attributes must be equal across all images of the dataset.  Got:\n' + '\n'.join(err))
 
-        # Save the image as an uncompressed PNG.
         img = PIL.Image.fromarray(img, { 1: 'L', 3: 'RGB' }[channels])
         image_bits = io.BytesIO()
         img.save(image_bits, format='png', compress_level=0, optimize=False)
@@ -397,4 +321,4 @@ def convert_dataset(
     close_dest()
 
 if __name__ == "__main__":
-    convert_dataset() # pylint: disable=no-value-for-parameter
+    convert_dataset()

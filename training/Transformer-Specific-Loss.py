@@ -8,7 +8,7 @@ class Loss:
     def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, sync, gain): # to be overridden by subclass
         raise NotImplementedError()
 
-class StyleGAN2Loss(Loss):
+class Loss(Loss):
     def __init__(self, device, G_mapping, G_synthesis, D, augment_pipe=None, style_mixing_prob=0.9, r1_gamma=15, pl_batch_shrink=2, pl_decay=0.01, pl_weight=0.5,phi=10):
         super().__init__()
         self.device = device

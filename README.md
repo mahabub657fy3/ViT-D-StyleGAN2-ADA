@@ -13,7 +13,7 @@ A PyTorch-based implementation of the **ViT-StyleGAN2-ADA** framework, designed 
 - 🧪 **Transformer-Specific Losses**: Token-level gradient penalties and class-token Path Length Regularization (PLR).
 
 ## 🖼️ Sample Results
-Generated Samples for FFHQ (256×256) AFHQ-CAT, DOG (512×512) with Proposed ViT-D-StyleGAN2-ADA, and Other Methods:
+Generated samples for the FFHQ (256×256) and AFHQ-CAT, AFHQ-DOG (512×512) datasets, comparing the output of the proposed ViT-D-StyleGAN2-ADA with other methods, including TransGAN and StyleGAN2-ADA. The images demonstrate the quality of the generated samples across different datasets, showcasing the effectiveness of the proposed method:
 
 ![image](https://github.com/user-attachments/assets/5192b42c-1c07-420d-a80f-a4d4a4098cc1)
 

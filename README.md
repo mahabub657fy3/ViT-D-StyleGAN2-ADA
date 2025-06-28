@@ -15,4 +15,5 @@ A PyTorch-based implementation of the **ViT-StyleGAN2-ADA** framework, designed 
 ## 🖼️ Sample Results
 Generated samples for FFHQ (256 × 256) and AFHQ-CAT/DOG (512 × 512) using only 5k training images. TransGAN suffers from severe artifacts and overfitting, and fails to complete AFHQ (512 × 512) due to out-of-memory errors. StyleGAN2-ADA enhances local texture fidelity but occasionally degrades global structure. By contrast, ViT-D-StyleGAN2-ADA delivers sharper details, stronger global coherence, and markedly reduced mode collapse across all domains:
 
-![Integrating ViT Discriminator](https://github.com/user-attachments/assets/41e8e9b8-28f4-4076-8eff-0703bd934a44)
+![Integrating ViT Discriminator](https://github.com/user-attachments/assets/daa2a2e7-366f-4061-8090-d9d07c11e6d8)
+

@@ -352,76 +352,6 @@ ViT-StyleGAN2-ADA/
 ├─ dnnlib/                     # Config utilities (EasyDict, etc.)
 └─ metrics/                    # FID, KID, IS, PPL, PR
 ```
-
----
-
-## Pretrained models
-
-Add your released weights here (Google Drive / HuggingFace / Git LFS). Put direct links and matching configs:
-
-| Dataset  | Res | Config | Checkpoint (.pkl) | Notes                   |
-| -------- | --- | ------ | ----------------- | ----------------------- |
-| FFHQ-5k  | 256 | `vit`  | **[Download](#)** | Used in Table X / Fig Y |
-| AFHQ-Dog | 256 | `vit`  | **[Download](#)** | —                       |
-| AFHQ-Cat | 256 | `vit`  | **[Download](#)** | —                       |
-
-> After uploading, please replace the `#` placeholders with real links.
-
----
-
-## FAQ & troubleshooting
-
-**Q: CUDA ops fail to compile (`upfirdn2d`, `bias_act`, etc.).**
-A: Ensure you installed a PyTorch wheel matching your CUDA. Install `ninja` (`pip install ninja`) and retry. Delete any cached build under `~/.cache/torch_extensions` and re-run.
-
-**Q: Out of memory (OOM).**
-A: Lower `--batch` (must be divisible by `--gpus`), reduce resolution, or try `--fp32 true` off (i.e., keep mixed precision). Close other GPU jobs.
-
-**Q: FID differs from the paper.**
-A: Verify identical preprocessing, resolution, and **kimg**. Run multiple seeds and average. Small deltas (±0.2–0.5 FID) are normal due to sampling variance.
-
-**Q: Can I resume training?**
-A: Yes, add `--resume /path/to/network-snapshot-XXXXXX.pkl`.
-
----
-
-## License & acknowledgements
-
-This repository builds on **StyleGAN2-ADA (PyTorch)** by NVIDIA.
-Please include the upstream **LICENSE** from StyleGAN2-ADA when distributing derivative code and respect any non-commercial clauses where applicable.
-
-* Original StyleGAN2-ADA authors and contributors (NVIDIA)
-* DiffAugment authors (if you use `training/diff_aug.py`)
-
----
-
-## Citation
-
-If you find this work useful, please cite:
-
-```bibtex
-@article{Your2025ViTD,
-  title   = {Vision-Transformer Discriminator Improves Global Structure in Limited-Data GANs},
-  author  = {Your Name and Coauthors},
-  journal = {Briefings in Bioinformatics},
-  year    = {2025},
-  note    = {Code: https://github.com/mahabub657fy3/ViT-DStyleGAN2-ADA}
-}
-```
-
----
-
-### Reviewer checklist (addressed)
-
-* ✅ **README with step-by-step setup** (env, data, training, eval, inference)
-* ✅ **Clear training script** (`train.py` with `--cfg vit`) and **example commands**
-* ✅ **Metrics & logging** instructions
-* ✅ **Dataset conversion** script and usage
-* ✅ **Pretrained model section** (placeholders to fill with links)
-* ✅ **Repo structure & notes on comparability**
-
----
-
 ### (Optional) Add a `requirements.txt`
 
 If you prefer a single install file, add this to the root as `requirements.txt`:
@@ -439,8 +369,5 @@ ninja
 # PyTorch and torchvision must match your CUDA; install from pytorch.org
 ```
 
----
-
-If you want, I can also generate small `scripts/*.sh` files (FFHQ/AFHQ training and sampling) to include in the repo so anyone can run them with one command.
 
 
